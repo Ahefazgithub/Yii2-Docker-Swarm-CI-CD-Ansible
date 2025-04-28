@@ -1,9 +1,25 @@
-version: '2'
-services:
-  php:
-    image: yiisoftware/yii2-php:7.4-apache
-    volumes:
-      - ~/.composer-docker/cache:/root/.composer/cache:delegated
-      - ./:/app:delegated
+
+
+
+
+version: "3.7" 
+
+services: yii2-app: 
+
+    image: ahefaz/your-app:latest 
     ports:
-      - '8000:80'
+      - "9000:9000" 
+
+    deploy: 
+
+     replicas: 1 
+     restart_policy: 
+
+        condition: on-failure 
+    networks:
+      - appnet 
+
+networks: 
+   appnet: 
+
+    driver: overlay
