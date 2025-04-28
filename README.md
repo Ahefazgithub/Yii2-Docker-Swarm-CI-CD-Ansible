@@ -1,233 +1,309 @@
-<p align="center">
-    <a href="https://github.com/yiisoft" target="_blank">
-        <img src="https://avatars0.githubusercontent.com/u/993323" height="100px">
-    </a>
-    <h1 align="center">Yii 2 Basic Project Template</h1>
-    <br>
-</p>
+#### 📘 DevOps Project - Yii2 Application Deployment with Docker Swarm, Ansible & GitHub Actions CI/CD
+📋 Project Overview
 
-Yii 2 Basic Project Template is a skeleton [Yii 2](https://www.yiiframework.com/) application best for
-rapidly creating small projects.
+####   This project demonstrates how to:
 
-The template contains the basic features including user login/logout and a contact page.
-It includes all commonly used configurations that would allow you to focus on adding new
-features to your application.
+    Deploy a Yii2 PHP application inside a Docker container using Docker Swarm on an AWS EC2 instance (Amazon Linux 2, t2.medium).
+    Run NGINX on host (not inside container) as a reverse proxy to the containerized application.
+    Automate server setup using Ansible.
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/yiisoft/yii2-app-basic.svg)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![Total Downloads](https://img.shields.io/packagist/dt/yiisoft/yii2-app-basic.svg)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![build](https://github.com/yiisoft/yii2-app-basic/workflows/build/badge.svg)](https://github.com/yiisoft/yii2-app-basic/actions?query=workflow%3Abuild)
+ ####   Implement CI/CD pipeline using GitHub Actions to:
 
-DIRECTORY STRUCTURE
--------------------
+        Build Docker image
+        Push image to DockerHub
+        SSH into EC2 server
+        Pull the new image
+        Update Docker Swarm service
 
-      assets/             contains assets definition
-      commands/           contains console commands (controllers)
-      config/             contains application configurations
-      controllers/        contains Web controller classes
-      mail/               contains view files for e-mails
-      models/             contains model classes
-      runtime/            contains files generated during runtime
-      tests/              contains various tests for the basic application
-      vendor/             contains dependent 3rd-party packages
-      views/              contains view files for the Web application
-      web/                contains the entry script and Web resources
+### 🖥️ Server Environment
 
+    AWS EC2 Instance: Amazon Linux 2 AMI
+    Instance Type: t2.medium
+    Security Groups: Allow SSH (22), HTTP (80)
 
+### ⚙️ Technology Stack
 
-REQUIREMENTS
-------------
+    PHP 8.1 + Yii2
+    Docker & Docker Swarm
+    NGINX
+    Ansible
+    GitHub Actions (CI/CD)
+    DockerHub (image repository)
 
-The minimum requirement by this project template that your Web server supports PHP 7.4.
+#####    🚀 Full Setup Instructions
 
 
-INSTALLATION
-------------
 
-### Install via Composer
-
-If you do not have [Composer](https://getcomposer.org/), you may install it by following the instructions
-at [getcomposer.org](https://getcomposer.org/doc/00-intro.md#installation-nix).
-
-You can then install this project template using the following command:
-
-~~~
-composer create-project --prefer-dist yiisoft/yii2-app-basic basic
-~~~
-
-Now you should be able to access the application through the following URL, assuming `basic` is the directory
-directly under the Web root.
-
-~~~
-http://localhost/basic/web/
-~~~
-
-### Install from an Archive File
-
-Extract the archive file downloaded from [yiiframework.com](https://www.yiiframework.com/download/) to
-a directory named `basic` that is directly under the Web root.
-
-Set cookie validation key in `config/web.php` file to some random secret string:
-
-```php
-'request' => [
-    // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
-    'cookieValidationKey' => '<secret random string goes here>',
-],
-```
-
-You can then access the application through the following URL:
-
-~~~
-http://localhost/basic/web/
-~~~
+## Step 1: Launch EC2 Instance
 
 
-### Install with Docker
 
-Update your vendor packages
+    Launch an EC2 Instance using Amazon Linux 2 AMI (t2.medium).
 
-    docker-compose run --rm php composer update --prefer-dist
+    Configure security groups to allow ports 22 (SSH) and 80 (HTTP).
+
     
-Run the installation triggers (creating cookie validation code)
-
-    docker-compose run --rm php composer install    
-    
-Start the container
-
-    docker-compose up -d
-    
-You can then access the application through the following URL:
-
-    http://127.0.0.1:8000
-
-**NOTES:** 
-- Minimum required Docker engine version `17.04` for development (see [Performance tuning for volume mounts](https://docs.docker.com/docker-for-mac/osxfs-caching/))
-- The default configuration uses a host-volume in your home directory `.docker-composer` for composer caches
+## Step 2: Connect to EC2 and Prepare Server
 
 
-CONFIGURATION
--------------
 
-### Database
+SSH into EC2 instance:
 
-Edit the file `config/db.php` with real data, for example:
+chmod 400 your-key.pem
+ssh -i your-key.pem ec2-user@your-ec2-public-ip
 
-```php
-return [
-    'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=yii2basic',
-    'username' => 'root',
-    'password' => '1234',
-    'charset' => 'utf8',
-];
-```
+## Update server and install basic packages:
 
-**NOTES:**
-- Yii won't create the database for you, this has to be done manually before you can access it.
-- Check and edit the other files in the `config/` directory to customize your application as required.
-- Refer to the README in the `tests` directory for information specific to basic application tests.
+sudo yum update -y
+
+# Install Ansible
+sudo amazon-linux-extras enable ansible2
+sudo yum install ansible -y
+
+# Install Git
+sudo yum install git -y
+
+##  Step 3: Project Structure
+
+yii2-docker-project/
+├── app/                     # Yii2 PHP Application
+├── Dockerfile
+├── docker-compose.yml
+├── ansible/
+│   ├── install.yml
+│   ├── deploy.yml
+│   ├── nginx.conf
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+├── inventory.ini
+└── README.md
+
+##  Step 4: Dockerfile
+
+Create Dockerfile:
+
+FROM php:8.1-fpm
+
+RUN apt-get update && apt-get install -y \
+    git unzip libzip-dev zip \
+    && docker-php-ext-install zip pdo pdo_mysql
+
+WORKDIR /var/www/html
+
+COPY ./app /var/www/html/
+
+RUN chown -R www-data:www-data /var/www/html
+
+CMD ["php-fpm"]
+
+###  Step 5: Docker Compose
+
+## Create docker-compose.yml:                     (below is my docker-compose.yml file )
+
+version: "3.7"
+
+services:
+  yii2-app:
+    image: ahefaz/your-app:latest               (ahefaz = my dockerhub username)
+    ports:
+      - "9000:9000"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: overlay
+
+##  Step 6: Ansible Playbooks
+
+## Create ansible/install.yml:                (below is my install.yml file for Ansible)
+
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Install Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v2.17.2/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Install NGINX
+      yum:
+        name: nginx
+        state: present
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Start and enable NGINX
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+###    Create ansible/deploy.yml:               (below is deploy.yml file for Ansible)
+
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Clone project repository
+      git:
+        repo: "git@github.com:Ahefazgithub/your-repo.git"             (this is my github repo link, you to change this according to yours)
+        dest: /home/ec2-user/yii2-docker-project                       (provided path of application)
+        force: yes
+
+    - name: Copy NGINX configuration
+      copy:
+        src: nginx.conf
+        dest: /etc/nginx/conf.d/default.conf
+
+    - name: Reload NGINX
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Initialize Docker Swarm
+      shell: |
+        docker swarm init || true
+
+    - name: Deploy Docker Stack
+      shell: |
+        cd /home/ec2-user/yii2-docker-project
+        docker stack deploy -c docker-compose.yml app
+
+###  Create ansible/nginx.conf:               (nginx.conf file for Ansible)
+
+server {
+    listen 80;
+    server_name 34.219.196.47            (put the public IP address of your ec2 instance)
+
+    location / {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+###   Step 7: GitHub Actions CI/CD Pipeline
+
+Create .github/workflows/deploy.yml:
+
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: docker build -t your-dockerhub-username/your-app:latest .
+
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Push Docker image
+        run: docker push your-dockerhub-username/your-app:latest
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ec2-user/your-project
+            git pull origin main
+            docker pull your-dockerhub-username/your-app:latest
+            docker stack deploy -c docker-compose.yml app
+            sudo systemctl restart nginx
+
+####    Step 8: Setup GitHub Secrets
+
+In your GitHub Repository → Settings → Secrets → Actions, add:
+Secret Name	Value
+DOCKERHUB_USERNAME	Your DockerHub username
+DOCKERHUB_PASSWORD	Your DockerHub password
+EC2_PUBLIC_IP	Your EC2 Public IP
+EC2_SSH_PRIVATE_KEY	Your .pem file private key content
 
 
-TESTING
--------
 
-Tests are located in `tests` directory. They are developed with [Codeception PHP Testing Framework](https://codeception.com/).
-By default, there are 3 test suites:
+### Step 9: Run Ansible Playbooks
 
-- `unit`
-- `functional`
-- `acceptance`
+Create inventory.ini:
 
-Tests can be executed by running
+[servers]
+34.219.196.47 ansible_user=ec2-user ansible_ssh_private_key_file=pem.pem          (replace IP to yours, also,  pem.pem to your .pem file)
 
-```
-vendor/bin/codecept run
-```
+Run playbooks:
 
-The command above will execute unit and functional tests. Unit tests are testing the system components, while functional
-tests are for testing user interaction. Acceptance tests are disabled by default as they require additional setup since
-they perform testing in real browser. 
+ansible-playbook -i inventory.ini ansible/install.yml
+ansible-playbook -i inventory.ini ansible/deploy.yml
 
+###  Step 10: Push Code to GitHub
 
-### Running  acceptance tests
-
-To execute acceptance tests do the following:  
-
-1. Rename `tests/acceptance.suite.yml.example` to `tests/acceptance.suite.yml` to enable suite configuration
-
-2. Replace `codeception/base` package in `composer.json` with `codeception/codeception` to install full-featured
-   version of Codeception
-
-3. Update dependencies with Composer 
-
-    ```
-    composer update  
-    ```
-
-4. Download [Selenium Server](https://www.seleniumhq.org/download/) and launch it:
-
-    ```
-    java -jar ~/selenium-server-standalone-x.xx.x.jar
-    ```
-
-    In case of using Selenium Server 3.0 with Firefox browser since v48 or Google Chrome since v53 you must download [GeckoDriver](https://github.com/mozilla/geckodriver/releases) or [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) and launch Selenium with it:
-
-    ```
-    # for Firefox
-    java -jar -Dwebdriver.gecko.driver=~/geckodriver ~/selenium-server-standalone-3.xx.x.jar
-    
-    # for Google Chrome
-    java -jar -Dwebdriver.chrome.driver=~/chromedriver ~/selenium-server-standalone-3.xx.x.jar
-    ``` 
-    
-    As an alternative way you can use already configured Docker container with older versions of Selenium and Firefox:
-    
-    ```
-    docker run --net=host selenium/standalone-firefox:2.53.0
-    ```
-
-5. (Optional) Create `yii2basic_test` database and update it by applying migrations if you have them.
-
-   ```
-   tests/bin/yii migrate
-   ```
-
-   The database configuration can be found at `config/test_db.php`.
+git init
+git remote add origin git@github.com:Ahefazgithub/Yii2-Docker-Swarm-CI-CD-Ansible.git           ( modify according to your github username and github repository name)
+git add .
+git commit -m "Initial commit"
+git push -u origin main
 
 
-6. Start web server:
 
-    ```
-    tests/bin/yii serve
-    ```
 
-7. Now you can run all available tests
 
-   ```
-   # run all available tests
-   vendor/bin/codecept run
 
-   # run acceptance tests
-   vendor/bin/codecept run acceptance
+✅ How It Works
 
-   # run only unit and functional tests
-   vendor/bin/codecept run unit,functional
-   ```
+    You push code to GitHub.
 
-### Code coverage support
+    GitHub Actions:
 
-By default, code coverage is disabled in `codeception.yml` configuration file, you should uncomment needed rows to be able
-to collect code coverage. You can run your tests and collect coverage with the following command:
+        Builds Docker image
+        Pushes it to DockerHub
+        SSHs into EC2
+        Pulls latest image
+        Updates Swarm Service
+        Reloads NGINX
 
-```
-#collect coverage for all tests
-vendor/bin/codecept run --coverage --coverage-html --coverage-xml
+### Your Yii2 app is deployed automatically!
 
-#collect coverage only for unit tests
-vendor/bin/codecept run unit --coverage --coverage-html --coverage-xml
 
-#collect coverage for unit and functional tests
-vendor/bin/codecept run functional,unit --coverage --coverage-html --coverage-xml
-```
 
-You can see code coverage output under the `tests/_output` directory.
+🎯 Final Notes
+
+    Ensure your EC2 public IP is used correctly in nginx.conf.
+
+    Always keep secrets and credentials protected.
+
+    Use proper Docker image tagging and versioning in real projects.
