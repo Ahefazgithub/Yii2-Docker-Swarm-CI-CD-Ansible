@@ -1,0 +1,30 @@
+
+
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Clone project repository
+      git:
+        repo: "git@github.com:YourUsername/your-repo.git"
+        dest: /home/ec2-user/your-project
+        force: yes
+
+    - name: Copy NGINX configuration
+      copy:
+        src: nginx.conf
+        dest: /etc/nginx/conf.d/default.conf
+
+    - name: Reload NGINX
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Initialize Docker Swarm
+      shell: |
+        docker swarm init || true
+
+    - name: Deploy Docker Stack
+      shell: |
+        cd /home/ec2-user/your-project
+        docker stack deploy -c docker-compose.yml app

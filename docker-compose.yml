@@ -1,0 +1,25 @@
+
+
+
+
+version: "3.7" 
+
+services: yii2-app: 
+
+    image: ahefaz/your-app:latest 
+    ports:
+      - "9000:9000" 
+
+    deploy: 
+
+     replicas: 1 
+     restart_policy: 
+
+        condition: on-failure 
+    networks:
+      - appnet 
+
+networks: 
+   appnet: 
+
+    driver: overlay
